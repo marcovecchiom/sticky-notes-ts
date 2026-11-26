@@ -17,6 +17,8 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 800 } } },
+    // Uses the installed Microsoft Edge, so it only runs on demand (npm run test:e2e:edge).
+    { name: 'msedge', use: { ...devices['Desktop Edge'], channel: 'msedge', viewport: { width: 1280, height: 800 } } },
   ],
   webServer: {
     command: `npm run dev -- --port ${PORT} --strictPort`,

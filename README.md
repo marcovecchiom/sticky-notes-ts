@@ -32,13 +32,16 @@ Supported browsers: latest Chrome, Firefox and Edge on desktop, minimum resoluti
 
 ## Testing
 
-End-to-end tests use [Playwright](https://playwright.dev) and run against the dev server in Chromium (the engine behind Chrome and Edge) and Firefox:
+End-to-end tests use [Playwright](https://playwright.dev) and run against the dev server in Chromium and Firefox, and on demand in Microsoft Edge:
 
 ```bash
 npx playwright install chromium firefox   # first run only: downloads the test browsers
-npm run test:e2e                          # starts the dev server if needed and runs the suite
+npm run test:e2e                          # Chromium + Firefox; starts the dev server if needed
+npm run test:e2e:edge                     # same suite in the installed Microsoft Edge
 npx playwright test --ui                  # optional: interactive runner
 ```
+
+The Edge project drives the real, installed browser (`npx playwright install msedge` installs it if missing), so it is kept out of the default run.
 
 The suite (`e2e/`) covers note creation (drawing, double-click, toolbar), moving, resizing, bringing to front, deleting through the trash zone, persistence across reloads, keyboard operation with screen reader announcements, the trash zone as a restricted area, and small-window behavior. Requests outside `localhost` are blocked, so the tests never depend on the network.
 
