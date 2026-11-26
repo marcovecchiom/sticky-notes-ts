@@ -29,6 +29,7 @@
   --color-success: #2ba86a;
   --color-danger: #f0503c;
   --color-danger-bg: rgba(240, 80, 60, 0.12);
+  --color-warning-bg: #fff1d6;
   /* Small danger text needs a darker shade than the brand red to reach 4.5:1. */
   --color-danger-text: #b3301f;
 
@@ -58,8 +59,6 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  min-width: 1024px;
-  min-height: 768px;
 }
 
 body {
@@ -69,7 +68,6 @@ body {
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
   user-select: none;
 }
 

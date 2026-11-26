@@ -8,24 +8,11 @@ import styles from './StickyNote.module.css'
 
 const LABEL_EXCERPT_LENGTH = 30
 
-/**
- * Props of `StickyNote`. Callbacks receive the note id so the board can pass the same
- * stable functions to every note.
- *
- * @property {Note} note - Note to render.
- * @property {boolean} isDragging - Whether the note is being moved.
- * @property {boolean} isOverTrash - Whether the note is being dragged over the trash.
- * @property {boolean} autoFocusText - Whether to focus the text when the flag turns on (new notes).
- * @property {Function} onDragStart - Starts moving the note.
- * @property {Function} onResizeStart - Starts resizing the note.
- * @property {Function} onFocus - Brings the note to the front.
- * @property {Function} onKeyCommand - Runs a keyboard move, resize or delete command.
- * @property {Function} onDelete - Deletes the note.
- * @property {Function} onChangeText - Updates the note text.
- * @property {Function} onChangeColor - Updates the note color.
- */
 interface StickyNoteProps {
   note: Note
+  /** Displayed position, kept inside the board; may differ from the stored `note.x` / `note.y`. */
+  x: number
+  y: number
   isDragging: boolean
   isOverTrash: boolean
   autoFocusText: boolean
@@ -38,26 +25,15 @@ interface StickyNoteProps {
   onChangeColor: (noteId: string, color: NoteColor) => void
 }
 
-/**
- * Builds the accessible name of a note from the start of its text.
- *
- * @param {string} text - Note content.
- * @returns {string} A label such as `"Sticky note: Buy milk"`.
- */
 function getNoteLabel(text: string): string {
   const excerpt = text.trim().slice(0, LABEL_EXCERPT_LENGTH)
   return `Sticky note: ${excerpt || 'empty'}`
 }
 
-/**
- * A draggable, resizable sticky note with editable text, a color palette and a
- * delete button. The card itself is focusable and operable with the keyboard.
- *
- * @param {StickyNoteProps} props - Note data, visual state and callbacks.
- * @returns {JSX.Element} The note element.
- */
 function StickyNoteComponent({
   note,
+  x,
+  y,
   isDragging,
   isOverTrash,
   autoFocusText,
@@ -79,23 +55,14 @@ function StickyNoteComponent({
     if (autoFocusText) textRef.current?.focus()
   }, [autoFocusText])
 
-  /**
-   * Keeps inner controls (text, buttons) from starting a drag.
-   *
-   * @param {PointerEvent<HTMLElement>} event - `pointerdown` on an inner control.
-   * @returns {void}
-   */
+  /** Inner controls must not start a drag; the card still gets focus and is raised. */
   const handleControlPointerDown = (event: PointerEvent<HTMLElement>) => {
     event.stopPropagation()
   }
 
   /**
-   * Keyboard map of the note: Escape leaves the text, Enter enters it, and the rest
-   * of the keys on the card are forwarded as move, resize or delete commands.
-   * Keys typed in the text or pressed on inner buttons keep their native behavior.
-   *
-   * @param {KeyboardEvent<HTMLElement>} event - `keydown` inside the note.
-   * @returns {void}
+   * Keys typed in the text or pressed on inner buttons keep their native behavior; only keys
+   * pressed on the card itself are note commands.
    */
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.target === textRef.current) {
@@ -120,7 +87,8 @@ function StickyNoteComponent({
       ref={cardRef}
       className={className}
       style={{
-        transform: `translate3d(${note.x}px, ${note.y}px, 0)`,
+        // A transform keeps moves on the compositor, avoiding the layout reflow of top/left.
+        transform: `translate3d(${x}px, ${y}px, 0)`,
         width: note.width,
         height: note.height,
         zIndex: note.zIndex,
@@ -182,5 +150,5 @@ function StickyNoteComponent({
   )
 }
 
-/** Memoized `StickyNoteComponent`: while one note moves, the others do not re-render. */
+/** Memoized so dragging one note does not re-render the others. */
 export const StickyNote = memo(StickyNoteComponent)

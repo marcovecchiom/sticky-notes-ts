@@ -1,41 +1,21 @@
 import { NOTE_COLORS } from '../constants/notes'
 import type { Note, NoteColor } from '../types/note'
 
-/**
- * Type guard for non-null objects whose properties can be read safely.
- *
- * @param {unknown} value - Value to check.
- * @returns {boolean} `true` if `value` is a non-null object.
- */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-/**
- * Type guard for numbers that are neither `NaN` nor infinite.
- *
- * @param {unknown} value - Value to check.
- * @returns {boolean} `true` if `value` is a finite number.
- */
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
-/**
- * Type guard for the supported note colors.
- *
- * @param {unknown} value - Value to check.
- * @returns {boolean} `true` if `value` is a key of `NOTE_COLORS`.
- */
-export function isNoteColor(value: unknown): value is NoteColor {
+function isNoteColor(value: unknown): value is NoteColor {
   return typeof value === 'string' && Object.hasOwn(NOTE_COLORS, value)
 }
 
 /**
- * Type guard that validates the full shape of a note, including positive dimensions.
- *
- * @param {unknown} value - Value to check, typically parsed from JSON.
- * @returns {boolean} `true` if `value` is a valid `Note`.
+ * Runtime guard for untrusted persisted data, which may be hand-edited or written by an
+ * older version of the app.
  */
 export function isNote(value: unknown): value is Note {
   return (
@@ -53,13 +33,7 @@ export function isNote(value: unknown): value is Note {
   )
 }
 
-/**
- * Extracts the valid notes from untrusted data. Keeps the valid entries instead of
- * discarding the whole board for one corrupted note.
- *
- * @param {unknown} value - Parsed JSON that should be an array of notes.
- * @returns {Note[]} Valid notes, or an empty array if `value` is not an array.
- */
+/** Keeps the valid entries instead of discarding the whole board for one corrupted note. */
 export function parseNotes(value: unknown): Note[] {
   return Array.isArray(value) ? value.filter(isNote) : []
 }

@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { KeyboardEvent, RefObject } from 'react'
 import { NEW_NOTE_BUTTON_ID } from '../constants/a11y'
-import { KEYBOARD_STEP, MIN_HEIGHT, MIN_WIDTH } from '../constants/notes'
+import { KEYBOARD_STEP } from '../constants/notes'
 import type { Announce } from '../types/announcement'
-import type { Dimensions, Note, Position } from '../types/note'
-import { clamp } from '../utils/geometry'
+import type { Dimensions, Note, Position, Rect } from '../types/note'
+import { clampToBoard, constrainSize, getElementSize, getTrashRect, placeInBoard, rectsIntersect } from '../utils/geometry'
 
-/**
- * Dependencies of `useNoteKeyboard`: the current notes, the board element, the
- * store actions and the screen reader announcer.
- */
 interface NoteKeyboardOptions {
   notes: Note[]
   boardRef: RefObject<HTMLElement | null>
@@ -28,12 +24,21 @@ const ARROW_DIRECTIONS: Record<string, Position> = {
 }
 
 /**
- * Keyboard alternative to the pointer gestures: arrow keys move a note, Shift + arrow
- * keys resize it and Delete/Backspace removes it, keeping focus on a sensible element.
- *
- * @param {NoteKeyboardOptions} options - Notes, board ref, store actions and announcer.
- * @returns {object} Stable `handleNoteKeyDown` and `deleteNoteAndMoveFocus` callbacks.
+ * Unlike a drag, a keyboard step never deletes: a note heading into the trash zone stops at
+ * its edge, so a held arrow key cannot remove a note by accident.
  */
+function getKeyboardTarget(note: Rect, position: Position, direction: Position, board: Dimensions): Position {
+  const target = clampToBoard(
+    { ...note, x: position.x + direction.x * KEYBOARD_STEP, y: position.y + direction.y * KEYBOARD_STEP },
+    board,
+  )
+  const trash = getTrashRect(board)
+  if (!rectsIntersect({ ...note, ...target }, trash)) return target
+  if (direction.x > 0) return { ...target, x: trash.x - note.width }
+  if (direction.y > 0) return { ...target, y: trash.y - note.height }
+  return position
+}
+
 export function useNoteKeyboard({
   notes,
   boardRef,
@@ -49,11 +54,8 @@ export function useNoteKeyboard({
   }, [notes])
 
   /**
-   * Deletes a note. If focus was inside it, focus moves to the previous note, the
-   * next one, or the "New Note" button, so it is never lost on `document.body`.
-   *
-   * @param {string} noteId - Id of the note to delete.
-   * @returns {void}
+   * If focus was inside the deleted note, moves it to a neighbouring note or the "New Note"
+   * button so keyboard users are never dropped onto `document.body`.
    */
   const deleteNoteAndMoveFocus = useCallback(
     (noteId: string) => {
@@ -70,13 +72,6 @@ export function useNoteKeyboard({
     [announce, boardRef, deleteNote],
   )
 
-  /**
-   * Runs the keyboard command for a focused note, within the board bounds.
-   *
-   * @param {KeyboardEvent<HTMLElement>} event - `keydown` on the note card.
-   * @param {string} noteId - Id of the focused note.
-   * @returns {void}
-   */
   const handleNoteKeyDown = useCallback(
     (event: KeyboardEvent<HTMLElement>, noteId: string) => {
       const note = notesRef.current.find((candidate) => candidate.id === noteId)
@@ -93,17 +88,24 @@ export function useNoteKeyboard({
       if (!direction) return
       event.preventDefault()
       bringToFront(noteId)
+      const boardSize = getElementSize(board)
+      // Commands start from where the note is shown, which differs from the stored position
+      // when the note was placed in a larger window.
+      const position = placeInBoard(note, boardSize)
 
       if (event.shiftKey) {
-        const width = clamp(note.width + direction.x * KEYBOARD_STEP, MIN_WIDTH, board.clientWidth - note.x)
-        const height = clamp(note.height + direction.y * KEYBOARD_STEP, MIN_HEIGHT, board.clientHeight - note.y)
-        updateNoteSize(noteId, { width, height })
-        announce(`Resized to ${Math.round(width)} by ${Math.round(height)} pixels`)
+        const size = constrainSize(
+          position,
+          { width: note.width + direction.x * KEYBOARD_STEP, height: note.height + direction.y * KEYBOARD_STEP },
+          boardSize,
+        )
+        if (position.x !== note.x || position.y !== note.y) updateNotePosition(noteId, position)
+        updateNoteSize(noteId, size)
+        announce(`Resized to ${Math.round(size.width)} by ${Math.round(size.height)} pixels`)
       } else {
-        const x = clamp(note.x + direction.x * KEYBOARD_STEP, 0, board.clientWidth - note.width)
-        const y = clamp(note.y + direction.y * KEYBOARD_STEP, 0, board.clientHeight - note.height)
-        updateNotePosition(noteId, { x, y })
-        announce(`Moved to X ${Math.round(x)}, Y ${Math.round(y)}`)
+        const next = getKeyboardTarget(note, position, direction, boardSize)
+        updateNotePosition(noteId, next)
+        announce(`Moved to X ${Math.round(next.x)}, Y ${Math.round(next.y)}`)
       }
     },
     [announce, boardRef, bringToFront, deleteNoteAndMoveFocus, updateNotePosition, updateNoteSize],

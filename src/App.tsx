@@ -6,18 +6,12 @@ import { Toolbar } from './components/Toolbar'
 import { DEFAULT_DIMENSIONS } from './constants/notes'
 import { useAnnouncer } from './hooks/useAnnouncer'
 import { useNotesManager } from './hooks/useNotesManager'
-import type { Dimensions, Position } from './types/note'
+import type { Rect } from './types/note'
 
 const NEW_NOTE_ORIGIN = 32
 const NEW_NOTE_CASCADE_STEP = 24
 const NEW_NOTE_CASCADE_LENGTH = 10
 
-/**
- * Root component: connects the notes store with the toolbar, the board and the
- * screen reader live regions.
- *
- * @returns {JSX.Element} The application layout.
- */
 function App() {
   const {
     notes,
@@ -37,14 +31,8 @@ function App() {
     if (syncStatus === 'error') announce('Could not save changes', 'assertive')
   }, [announce, syncStatus])
 
-  /**
-   * Creates a note, focuses its text so the user can type right away and announces it.
-   *
-   * @param {Position & Dimensions} bounds - Position and size of the new note.
-   * @returns {string} The id of the new note.
-   */
   const createNote = useCallback(
-    (bounds: Position & Dimensions): string => {
+    (bounds: Rect): string => {
       const id = addNote(bounds)
       setAutoFocusNoteId(id)
       announce('Sticky note created')
@@ -53,13 +41,8 @@ function App() {
     [addNote, announce],
   )
 
-  /**
-   * Adds a default note from the toolbar. Cascades consecutive notes so they do not
-   * fully overlap.
-   *
-   * @returns {void}
-   */
   const handleAddNote = useCallback(() => {
+    // Cascades toolbar-created notes so consecutive ones do not fully overlap.
     const offset = NEW_NOTE_ORIGIN + (notes.length % NEW_NOTE_CASCADE_LENGTH) * NEW_NOTE_CASCADE_STEP
     createNote({ x: offset, y: offset, ...DEFAULT_DIMENSIONS })
   }, [createNote, notes.length])

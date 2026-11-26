@@ -1,13 +1,8 @@
 import type { Dimensions, Position } from './note'
 
 /**
- * Current pointer gesture on the board, modeled as a discriminated union on `kind`
- * so each state only carries the data it needs.
- *
- * - `idle`: no gesture in progress.
- * - `creating`: drawing a new note from `origin` to `current`.
- * - `dragging`: moving a note; `offset` is the pointer position inside the note.
- * - `resizing`: resizing a note from its bottom-right handle.
+ * Discriminated union: each gesture carries only its own data, so impossible states
+ * (e.g. dragging and resizing at once) cannot be represented.
  */
 export type PointerInteraction =
   | { kind: 'idle' }

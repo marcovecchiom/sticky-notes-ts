@@ -2,4 +2,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* Viewport minimum, not screen: a 1024x768 screen leaves roughly 650px of height once the
+     browser UI is drawn. Below this the page scrolls instead of clipping the board. */
+  min-width: 1024px;
+  min-height: 600px;
 }

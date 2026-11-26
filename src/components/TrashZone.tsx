@@ -1,35 +1,32 @@
-import type { Ref } from 'react'
+import { TRASH_ZONE } from '../constants/trash'
 import { TrashIcon } from './Icons'
 import styles from './TrashZone.module.css'
 
-/**
- * Props of `TrashZone`.
- *
- * @property {Ref<HTMLDivElement>} ref - Element used for the drop hit test.
- * @property {boolean} isVisible - Whether a note is being dragged.
- * @property {boolean} isHovered - Whether the dragged note is over the zone.
- */
 interface TrashZoneProps {
-  ref: Ref<HTMLDivElement>
   isVisible: boolean
   isHovered: boolean
 }
 
 /**
- * Drop zone in the bottom-right corner that deletes the note released over it. It is a
- * pointer-only affordance, so it is hidden from assistive technologies; keyboard users
- * delete notes with the Delete key or the note's delete button.
- *
- * @param {TrashZoneProps} props - Ref and visual state.
- * @returns {JSX.Element} The trash zone element.
+ * Hidden from assistive technologies because it is pointer-only; keyboard users delete
+ * notes with the Delete key or the note's delete button.
  */
-export function TrashZone({ ref, isVisible, isHovered }: TrashZoneProps) {
+export function TrashZone({ isVisible, isHovered }: TrashZoneProps) {
   const className = [styles.trash, isVisible && styles.visible, isHovered && styles.hovered]
     .filter(Boolean)
     .join(' ')
 
   return (
-    <div ref={ref} className={className} aria-hidden="true">
+    <div
+      className={className}
+      style={{
+        width: TRASH_ZONE.width,
+        height: TRASH_ZONE.height,
+        right: TRASH_ZONE.margin,
+        bottom: TRASH_ZONE.margin,
+      }}
+      aria-hidden="true"
+    >
       <TrashIcon />
       <span>{isHovered ? 'Release to delete' : 'Drop here to delete'}</span>
     </div>

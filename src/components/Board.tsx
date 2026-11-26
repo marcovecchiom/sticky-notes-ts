@@ -1,22 +1,19 @@
 import { useRef } from 'react'
 import { BOARD_INSTRUCTIONS_ID, NOTE_INSTRUCTIONS_ID } from '../constants/a11y'
+import { useElementSize } from '../hooks/useElementSize'
 import { useNoteKeyboard } from '../hooks/useNoteKeyboard'
 import { usePointerInteraction } from '../hooks/usePointerInteraction'
 import type { Announce } from '../types/announcement'
-import type { Dimensions, Note, NoteColor, Position } from '../types/note'
-import { getRectFromPoints } from '../utils/geometry'
+import type { Dimensions, Note, NoteColor, Position, Rect } from '../types/note'
+import { clampToBoard, getRectFromPoints, placeInBoard } from '../utils/geometry'
 import styles from './Board.module.css'
 import { StickyNote } from './StickyNote'
 import { TrashZone } from './TrashZone'
 
-/**
- * Props of `Board`: the notes to render, the note whose text should take focus, the
- * store actions gestures and notes call, and the screen reader announcer.
- */
 interface BoardProps {
   notes: Note[]
   autoFocusNoteId: string | null
-  addNote: (bounds: Position & Dimensions) => string
+  addNote: (bounds: Rect) => string
   bringToFront: (id: string) => void
   updateNotePosition: (id: string, position: Position) => void
   updateNoteSize: (id: string, dimensions: Dimensions) => void
@@ -26,14 +23,6 @@ interface BoardProps {
   announce: Announce
 }
 
-/**
- * Main landmark that renders the notes, the creation preview and the trash zone, and
- * handles pointer gestures (`usePointerInteraction`) and keyboard commands
- * (`useNoteKeyboard`).
- *
- * @param {BoardProps} props - Notes, focus target, store actions and announcer.
- * @returns {JSX.Element} The board element.
- */
 export function Board({
   notes,
   autoFocusNoteId,
@@ -47,7 +36,7 @@ export function Board({
   announce,
 }: BoardProps) {
   const boardRef = useRef<HTMLElement>(null)
-  const trashRef = useRef<HTMLDivElement>(null)
+  const boardSize = useElementSize(boardRef)
   const { handleNoteKeyDown, deleteNoteAndMoveFocus } = useNoteKeyboard({
     notes,
     boardRef,
@@ -60,7 +49,6 @@ export function Board({
   const { interaction, startDrag, startResize, boardHandlers } = usePointerInteraction({
     notes,
     boardRef,
-    trashRef,
     addNote,
     bringToFront,
     updateNotePosition,
@@ -90,22 +78,32 @@ export function Board({
         and Delete removes it.
       </p>
       <div className={styles.notesLayer}>
-        {notes.map((note) => (
-          <StickyNote
-            key={note.id}
-            note={note}
-            isDragging={note.id === draggingNoteId}
-            isOverTrash={note.id === draggingNoteId && isOverTrash}
-            autoFocusText={note.id === autoFocusNoteId}
-            onDragStart={startDrag}
-            onResizeStart={startResize}
-            onFocus={bringToFront}
-            onKeyCommand={handleNoteKeyDown}
-            onDelete={deleteNoteAndMoveFocus}
-            onChangeText={updateNoteText}
-            onChangeColor={updateNoteColor}
-          />
-        ))}
+        {notes.map((note) => {
+          // The dragged note may cover the trash (that is how it gets deleted); resting notes may not.
+          const position = !boardSize
+            ? note
+            : note.id === draggingNoteId
+              ? clampToBoard(note, boardSize)
+              : placeInBoard(note, boardSize)
+          return (
+            <StickyNote
+              key={note.id}
+              note={note}
+              x={position.x}
+              y={position.y}
+              isDragging={note.id === draggingNoteId}
+              isOverTrash={note.id === draggingNoteId && isOverTrash}
+              autoFocusText={note.id === autoFocusNoteId}
+              onDragStart={startDrag}
+              onResizeStart={startResize}
+              onFocus={bringToFront}
+              onKeyCommand={handleNoteKeyDown}
+              onDelete={deleteNoteAndMoveFocus}
+              onChangeText={updateNoteText}
+              onChangeColor={updateNoteColor}
+            />
+          )
+        })}
       </div>
       {preview && (
         <div
@@ -117,7 +115,7 @@ export function Board({
           }}
         />
       )}
-      <TrashZone ref={trashRef} isVisible={draggingNoteId !== null} isHovered={isOverTrash} />
+      <TrashZone isVisible={draggingNoteId !== null} isHovered={isOverTrash} />
     </main>
   )
 }
