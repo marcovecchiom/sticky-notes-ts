@@ -5,6 +5,10 @@ import type { PointerInteraction } from '../types/interaction'
 import type { Dimensions, Note, Position } from '../types/note'
 import { clamp, getRectFromPoints, isPointInRect } from '../utils/geometry'
 
+/**
+ * Dependencies of `usePointerInteraction`: the current notes, refs to the board and
+ * trash elements, and the store actions each gesture commits to.
+ */
 interface PointerInteractionOptions {
   notes: Note[]
   boardRef: RefObject<HTMLDivElement | null>
@@ -18,6 +22,15 @@ interface PointerInteractionOptions {
 
 const IDLE: PointerInteraction = { kind: 'idle' }
 
+/**
+ * Drives every pointer gesture on the board (draw-to-create, drag, resize, drop on
+ * trash and double-click) as a single state machine. The board captures the pointer,
+ * so notes only need to report where a gesture starts.
+ *
+ * @param {PointerInteractionOptions} options - Notes, element refs and store actions.
+ * @returns {object} The current `interaction`, the stable `startDrag` / `startResize`
+ * callbacks for notes, and `boardHandlers` to spread on the board element.
+ */
 export function usePointerInteraction({
   notes,
   boardRef,
@@ -38,6 +51,12 @@ export function usePointerInteraction({
   // whether a double-click happened on a note; the gesture origin is tracked instead.
   const pressedOnBackgroundRef = useRef(false)
 
+  /**
+   * Converts viewport coordinates into board coordinates.
+   *
+   * @param {{ clientX: number, clientY: number }} event - Pointer or mouse event.
+   * @returns {Position} The point relative to the board's top-left corner.
+   */
   const toBoardPoint = useCallback(
     (event: { clientX: number; clientY: number }): Position => {
       const rect = boardRef.current?.getBoundingClientRect()
@@ -46,19 +65,30 @@ export function usePointerInteraction({
     [boardRef],
   )
 
-  // Capturing on the board keeps pointermove/pointerup flowing to it even when the
-  // cursor outruns the note or leaves the window.
+  /**
+   * Captures the pointer on the board so pointermove/pointerup keep flowing to it even
+   * when the cursor outruns the note or leaves the window.
+   *
+   * @param {PointerEvent} event - Event of the pointer to capture.
+   * @returns {void}
+   */
   const capturePointer = useCallback(
     (event: PointerEvent) => boardRef.current?.setPointerCapture(event.pointerId),
     [boardRef],
   )
 
+  /**
+   * Starts moving a note: raises it and remembers where it was grabbed.
+   *
+   * @param {PointerEvent<HTMLElement>} event - `pointerdown` on the note.
+   * @param {string} noteId - Id of the note to move.
+   * @returns {void}
+   */
   const startDrag = useCallback(
     (event: PointerEvent<HTMLElement>, noteId: string) => {
       const note = notesRef.current.find((candidate) => candidate.id === noteId)
       if (event.button !== 0 || !note) return
       event.stopPropagation()
-      pressedOnBackgroundRef.current = false
       bringToFront(noteId)
       capturePointer(event)
       const pointer = toBoardPoint(event)
@@ -73,12 +103,18 @@ export function usePointerInteraction({
     [bringToFront, capturePointer, toBoardPoint],
   )
 
+  /**
+   * Starts resizing a note from its bottom-right handle.
+   *
+   * @param {PointerEvent<HTMLElement>} event - `pointerdown` on the resize handle.
+   * @param {string} noteId - Id of the note to resize.
+   * @returns {void}
+   */
   const startResize = useCallback(
     (event: PointerEvent<HTMLElement>, noteId: string) => {
       const note = notesRef.current.find((candidate) => candidate.id === noteId)
       if (event.button !== 0 || !note) return
       event.stopPropagation()
-      pressedOnBackgroundRef.current = false
       bringToFront(noteId)
       capturePointer(event)
       setInteraction({
@@ -92,6 +128,22 @@ export function usePointerInteraction({
     [bringToFront, capturePointer, toBoardPoint],
   )
 
+  /**
+   * Resets the background-press flag. Runs in the capture phase, before inner controls
+   * stop propagation, so every press resets it.
+   *
+   * @returns {void}
+   */
+  const handleBoardPointerDownCapture = () => {
+    pressedOnBackgroundRef.current = false
+  }
+
+  /**
+   * Starts drawing a new note when the press lands on the empty board.
+   *
+   * @param {PointerEvent<HTMLDivElement>} event - `pointerdown` on the board.
+   * @returns {void}
+   */
   const handleBoardPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || event.target !== event.currentTarget) return
     pressedOnBackgroundRef.current = true
@@ -100,6 +152,13 @@ export function usePointerInteraction({
     setInteraction({ kind: 'creating', pointerId: event.pointerId, origin, current: origin })
   }
 
+  /**
+   * Advances the active gesture: updates the preview, moves the note (checking the
+   * trash) or resizes it, always within the board.
+   *
+   * @param {PointerEvent<HTMLDivElement>} event - Captured `pointermove`.
+   * @returns {void}
+   */
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (interaction.kind === 'idle' || interaction.pointerId !== event.pointerId) return
     const board = event.currentTarget
@@ -140,6 +199,13 @@ export function usePointerInteraction({
     }
   }
 
+  /**
+   * Commits the active gesture: creates the drawn note if it is big enough, or deletes
+   * the dragged note if it was dropped on the trash.
+   *
+   * @param {PointerEvent<HTMLDivElement>} event - Captured `pointerup`.
+   * @returns {void}
+   */
   const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     if (interaction.kind === 'idle' || interaction.pointerId !== event.pointerId) return
 
@@ -154,12 +220,25 @@ export function usePointerInteraction({
     setInteraction(IDLE)
   }
 
+  /**
+   * Aborts the active gesture without committing it.
+   *
+   * @param {PointerEvent<HTMLDivElement>} event - Captured `pointercancel`.
+   * @returns {void}
+   */
   const handlePointerCancel = (event: PointerEvent<HTMLDivElement>) => {
     if (interaction.kind !== 'idle' && interaction.pointerId === event.pointerId) {
       setInteraction(IDLE)
     }
   }
 
+  /**
+   * Creates a default-size note centered on the cursor, only when the presses started
+   * on the empty board.
+   *
+   * @param {MouseEvent<HTMLDivElement>} event - `dblclick` on the board.
+   * @returns {void}
+   */
   const handleDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
     if (!pressedOnBackgroundRef.current) return
     const pointer = toBoardPoint(event)
@@ -175,6 +254,7 @@ export function usePointerInteraction({
     startDrag,
     startResize,
     boardHandlers: {
+      onPointerDownCapture: handleBoardPointerDownCapture,
       onPointerDown: handleBoardPointerDown,
       onPointerMove: handlePointerMove,
       onPointerUp: handlePointerUp,

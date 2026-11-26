@@ -25,20 +25,70 @@
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   height: 32px;
+  padding: 0 10px;
   border-bottom: 1px solid rgba(15, 22, 26, 0.08);
+}
+
+.grip {
   color: rgba(15, 22, 26, 0.35);
 }
 
-.body {
+.palette {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.note:hover .palette,
+.note:focus-within .palette {
+  opacity: 1;
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1.5px solid rgba(15, 22, 26, 0.25);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.swatch:hover {
+  transform: scale(1.15);
+}
+
+.swatch[aria-pressed='true'] {
+  border-color: var(--color-text-primary);
+  box-shadow: 0 0 0 2px var(--color-bg-surface);
+}
+
+.swatch:focus-visible {
+  outline: 2px solid var(--color-accent-focus);
+  outline-offset: 2px;
+}
+
+.text {
   flex: 1;
-  padding: 10px 14px;
-  overflow: hidden;
+  width: 100%;
+  min-height: 0;
+  padding: 10px 14px 20px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--color-text-primary);
   font-size: 15px;
   line-height: 1.45;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  user-select: text;
+  cursor: text;
+}
+
+.text::placeholder {
+  color: var(--color-text-secondary);
 }
 
 .resizeHandle {

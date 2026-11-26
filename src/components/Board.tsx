@@ -1,11 +1,12 @@
 import { useRef } from 'react'
 import { usePointerInteraction } from '../hooks/usePointerInteraction'
-import type { Dimensions, Note, Position } from '../types/note'
+import type { Dimensions, Note, NoteColor, Position } from '../types/note'
 import { getRectFromPoints } from '../utils/geometry'
 import styles from './Board.module.css'
 import { StickyNote } from './StickyNote'
 import { TrashZone } from './TrashZone'
 
+/** Props of `Board`: the notes to render and the store actions gestures and notes call. */
 interface BoardProps {
   notes: Note[]
   addNote: (bounds: Position & Dimensions) => string
@@ -13,9 +14,27 @@ interface BoardProps {
   updateNotePosition: (id: string, position: Position) => void
   updateNoteSize: (id: string, dimensions: Dimensions) => void
   deleteNote: (id: string) => void
+  updateNoteText: (id: string, text: string) => void
+  updateNoteColor: (id: string, color: NoteColor) => void
 }
 
-export function Board({ notes, addNote, ...actions }: BoardProps) {
+/**
+ * Canvas that renders the notes, the creation preview and the trash zone, and
+ * handles every pointer gesture through `usePointerInteraction`.
+ *
+ * @param {BoardProps} props - Notes and store actions.
+ * @returns {JSX.Element} The board element.
+ */
+export function Board({
+  notes,
+  addNote,
+  bringToFront,
+  updateNotePosition,
+  updateNoteSize,
+  deleteNote,
+  updateNoteText,
+  updateNoteColor,
+}: BoardProps) {
   const boardRef = useRef<HTMLDivElement>(null)
   const trashRef = useRef<HTMLDivElement>(null)
   const { interaction, startDrag, startResize, boardHandlers } = usePointerInteraction({
@@ -23,7 +42,10 @@ export function Board({ notes, addNote, ...actions }: BoardProps) {
     boardRef,
     trashRef,
     addNote,
-    ...actions,
+    bringToFront,
+    updateNotePosition,
+    updateNoteSize,
+    deleteNote,
   })
 
   const draggingNoteId = interaction.kind === 'dragging' ? interaction.noteId : null
@@ -45,6 +67,9 @@ export function Board({ notes, addNote, ...actions }: BoardProps) {
             isOverTrash={note.id === draggingNoteId && isOverTrash}
             onDragStart={startDrag}
             onResizeStart={startResize}
+            onFocus={bringToFront}
+            onChangeText={updateNoteText}
+            onChangeColor={updateNoteColor}
           />
         ))}
       </div>

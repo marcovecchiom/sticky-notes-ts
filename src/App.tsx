@@ -9,11 +9,30 @@ const NEW_NOTE_ORIGIN = 32
 const NEW_NOTE_CASCADE_STEP = 24
 const NEW_NOTE_CASCADE_LENGTH = 10
 
+/**
+ * Root component: connects the notes store with the toolbar and the board.
+ *
+ * @returns {JSX.Element} The application layout.
+ */
 function App() {
-  const { notes, syncStatus, addNote, bringToFront, updateNotePosition, updateNoteSize, deleteNote } =
-    useNotesManager()
+  const {
+    notes,
+    syncStatus,
+    addNote,
+    bringToFront,
+    updateNotePosition,
+    updateNoteSize,
+    updateNoteText,
+    updateNoteColor,
+    deleteNote,
+  } = useNotesManager()
 
-  // Cascades toolbar-created notes so consecutive ones don't fully overlap.
+  /**
+   * Adds a default note from the toolbar. Cascades consecutive notes so they do not
+   * fully overlap.
+   *
+   * @returns {void}
+   */
   const handleAddNote = useCallback(() => {
     const offset = NEW_NOTE_ORIGIN + (notes.length % NEW_NOTE_CASCADE_LENGTH) * NEW_NOTE_CASCADE_STEP
     addNote({ x: offset, y: offset, ...DEFAULT_DIMENSIONS })
@@ -29,6 +48,8 @@ function App() {
         updateNotePosition={updateNotePosition}
         updateNoteSize={updateNoteSize}
         deleteNote={deleteNote}
+        updateNoteText={updateNoteText}
+        updateNoteColor={updateNoteColor}
       />
     </div>
   )

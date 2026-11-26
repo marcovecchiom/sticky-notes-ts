@@ -1,8 +1,20 @@
+/**
+ * Shared props for the inline SVG icons, which inherit `currentColor`.
+ *
+ * @property {number} [size] - Width and height in pixels.
+ * @property {string} [className] - Extra CSS class.
+ */
 interface IconProps {
   size?: number
   className?: string
 }
 
+/**
+ * Plus sign used by the "New Note" button.
+ *
+ * @param {IconProps} props - Icon size and class.
+ * @returns {JSX.Element} The SVG icon.
+ */
 export function PlusIcon({ size = 18, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={className} aria-hidden="true">
@@ -11,6 +23,12 @@ export function PlusIcon({ size = 18, className }: IconProps) {
   )
 }
 
+/**
+ * Dotted grip shown on the drag area of a note.
+ *
+ * @param {IconProps} props - Icon size and class.
+ * @returns {JSX.Element} The SVG icon.
+ */
 export function GripIcon({ size = 16, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
@@ -24,6 +42,12 @@ export function GripIcon({ size = 16, className }: IconProps) {
   )
 }
 
+/**
+ * Trash can shown in the delete zone.
+ *
+ * @param {IconProps} props - Icon size and class.
+ * @returns {JSX.Element} The SVG icon.
+ */
 export function TrashIcon({ size = 22, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
@@ -32,6 +56,12 @@ export function TrashIcon({ size = 22, className }: IconProps) {
   )
 }
 
+/**
+ * Diagonal lines shown on the resize handle of a note.
+ *
+ * @param {IconProps} props - Icon size and class.
+ * @returns {JSX.Element} The SVG icon.
+ */
 export function ResizeHandleIcon({ size = 12, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className={className} aria-hidden="true">

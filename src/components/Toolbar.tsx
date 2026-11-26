@@ -9,11 +9,23 @@ const SYNC_LABELS: Record<SyncStatus, string> = {
   error: 'Could not save changes',
 }
 
+/**
+ * Props of `Toolbar`.
+ *
+ * @property {SyncStatus} syncStatus - Current persistence state.
+ * @property {() => void} onAddNote - Creates a default note.
+ */
 interface ToolbarProps {
   syncStatus: SyncStatus
   onAddNote: () => void
 }
 
+/**
+ * Top bar with the app title, the "New Note" button, usage hints and the sync status.
+ *
+ * @param {ToolbarProps} props - Sync status and add-note callback.
+ * @returns {JSX.Element} The toolbar element.
+ */
 export function Toolbar({ syncStatus, onAddNote }: ToolbarProps) {
   return (
     <header className={styles.toolbar}>
