@@ -1,0 +1,76 @@
+:root {
+  /* Typography */
+  --font-family-base: 'futura', 'Futura', 'Jost', 'Century Gothic', 'Apple SD Gothic Neo', -apple-system,
+    BlinkMacSystemFont, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Surfaces and layout */
+  --color-bg-canvas: #f8fafa;
+  --color-bg-toolbar: #eff1f1;
+  --color-bg-surface: #ffffff;
+  --color-border-subtle: #efefef;
+  --color-glass-overlay: rgba(255, 255, 255, 0.4);
+
+  /* Text and icons */
+  --color-text-primary: #0f161a;
+  --color-text-secondary: #707477;
+  --color-text-muted: #7b87a8;
+
+  /* Actions and brand */
+  --color-brand-primary: #284086;
+  --color-brand-hover: #3453ad;
+  --color-accent-focus: #007aff;
+
+  /* Status */
+  --color-success: #2ba86a;
+  --color-danger: #f0503c;
+  --color-danger-bg: rgba(240, 80, 60, 0.12);
+
+  /* Sticky note palette */
+  --note-yellow: #ffde55;
+  --note-amber: #ffb133;
+  --note-sky: #54cef9;
+  --note-teal: #2bc6bf;
+
+  /* Elevation and shape */
+  --shadow-toolbar: 0 1px 3px rgba(15, 22, 26, 0.06);
+  --shadow-note: 0 4px 12px rgba(15, 22, 26, 0.08);
+  --shadow-note-dragging: 0 14px 28px rgba(15, 22, 26, 0.18);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  min-width: 1024px;
+  min-height: 768px;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-regular);
+  background-color: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  user-select: none;
+}
+
+button,
+textarea,
+input {
+  font-family: inherit;
+}

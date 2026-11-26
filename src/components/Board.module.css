@@ -1,0 +1,37 @@
+.board {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  background-color: var(--color-bg-canvas);
+  background-image: radial-gradient(rgb(123 135 168 / 0.35) 0.75px, transparent 0.75px);
+  background-size: 24px 24px;
+}
+
+.interacting {
+  user-select: none;
+}
+
+/* Own stacking context so ever-growing note z-indexes never cover the trash or preview. */
+.notesLayer {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.notesLayer > * {
+  pointer-events: auto;
+}
+
+.preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  border: 1.5px dashed var(--color-accent-focus);
+  border-radius: var(--radius-md);
+  background: rgba(0, 122, 255, 0.08);
+  pointer-events: none;
+}
