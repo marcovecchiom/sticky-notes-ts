@@ -1,23 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent, RefObject } from 'react'
 import { DEFAULT_DIMENSIONS, MIN_DRAWN_SIZE } from '../constants/notes'
+import type { Announce } from '../types/announcement'
 import type { PointerInteraction } from '../types/interaction'
 import type { Dimensions, Note, Position } from '../types/note'
 import { clamp, getRectFromPoints, isPointInRect } from '../utils/geometry'
 
 /**
  * Dependencies of `usePointerInteraction`: the current notes, refs to the board and
- * trash elements, and the store actions each gesture commits to.
+ * trash elements, the store actions each gesture commits to and the announcer.
  */
 interface PointerInteractionOptions {
   notes: Note[]
-  boardRef: RefObject<HTMLDivElement | null>
+  boardRef: RefObject<HTMLElement | null>
   trashRef: RefObject<HTMLDivElement | null>
   addNote: (bounds: Position & Dimensions) => string
   bringToFront: (id: string) => void
   updateNotePosition: (id: string, position: Position) => void
   updateNoteSize: (id: string, dimensions: Dimensions) => void
   deleteNote: (id: string) => void
+  announce: Announce
 }
 
 const IDLE: PointerInteraction = { kind: 'idle' }
@@ -27,7 +29,7 @@ const IDLE: PointerInteraction = { kind: 'idle' }
  * trash and double-click) as a single state machine. The board captures the pointer,
  * so notes only need to report where a gesture starts.
  *
- * @param {PointerInteractionOptions} options - Notes, element refs and store actions.
+ * @param {PointerInteractionOptions} options - Notes, element refs, store actions and announcer.
  * @returns {object} The current `interaction`, the stable `startDrag` / `startResize`
  * callbacks for notes, and `boardHandlers` to spread on the board element.
  */
@@ -40,6 +42,7 @@ export function usePointerInteraction({
   updateNotePosition,
   updateNoteSize,
   deleteNote,
+  announce,
 }: PointerInteractionOptions) {
   const [interaction, setInteraction] = useState<PointerInteraction>(IDLE)
   // Lets the gesture-start callbacks stay stable (and notes memoized) while reading fresh notes.
@@ -141,10 +144,10 @@ export function usePointerInteraction({
   /**
    * Starts drawing a new note when the press lands on the empty board.
    *
-   * @param {PointerEvent<HTMLDivElement>} event - `pointerdown` on the board.
+   * @param {PointerEvent<HTMLElement>} event - `pointerdown` on the board.
    * @returns {void}
    */
-  const handleBoardPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+  const handleBoardPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0 || event.target !== event.currentTarget) return
     pressedOnBackgroundRef.current = true
     capturePointer(event)
@@ -154,12 +157,12 @@ export function usePointerInteraction({
 
   /**
    * Advances the active gesture: updates the preview, moves the note (checking the
-   * trash) or resizes it, always within the board.
+   * trash and announcing when it enters it) or resizes it, always within the board.
    *
-   * @param {PointerEvent<HTMLDivElement>} event - Captured `pointermove`.
+   * @param {PointerEvent<HTMLElement>} event - Captured `pointermove`.
    * @returns {void}
    */
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     if (interaction.kind === 'idle' || interaction.pointerId !== event.pointerId) return
     const board = event.currentTarget
     const pointer = toBoardPoint(event)
@@ -184,6 +187,7 @@ export function usePointerInteraction({
         const isOverTrash = trashRect !== undefined && isPointInRect({ x: event.clientX, y: event.clientY }, trashRect)
         if (isOverTrash !== interaction.isOverTrash) {
           setInteraction({ ...interaction, isOverTrash })
+          if (isOverTrash) announce('Note over trash zone. Release to delete it.', 'assertive')
         }
         break
       }
@@ -201,12 +205,12 @@ export function usePointerInteraction({
 
   /**
    * Commits the active gesture: creates the drawn note if it is big enough, or deletes
-   * the dragged note if it was dropped on the trash.
+   * (and announces) the dragged note if it was dropped on the trash.
    *
-   * @param {PointerEvent<HTMLDivElement>} event - Captured `pointerup`.
+   * @param {PointerEvent<HTMLElement>} event - Captured `pointerup`.
    * @returns {void}
    */
-  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+  const handlePointerUp = (event: PointerEvent<HTMLElement>) => {
     if (interaction.kind === 'idle' || interaction.pointerId !== event.pointerId) return
 
     if (interaction.kind === 'creating') {
@@ -216,6 +220,7 @@ export function usePointerInteraction({
       }
     } else if (interaction.kind === 'dragging' && interaction.isOverTrash) {
       deleteNote(interaction.noteId)
+      announce('Sticky note deleted')
     }
     setInteraction(IDLE)
   }
@@ -223,10 +228,10 @@ export function usePointerInteraction({
   /**
    * Aborts the active gesture without committing it.
    *
-   * @param {PointerEvent<HTMLDivElement>} event - Captured `pointercancel`.
+   * @param {PointerEvent<HTMLElement>} event - Captured `pointercancel`.
    * @returns {void}
    */
-  const handlePointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+  const handlePointerCancel = (event: PointerEvent<HTMLElement>) => {
     if (interaction.kind !== 'idle' && interaction.pointerId === event.pointerId) {
       setInteraction(IDLE)
     }
@@ -236,10 +241,10 @@ export function usePointerInteraction({
    * Creates a default-size note centered on the cursor, only when the presses started
    * on the empty board.
    *
-   * @param {MouseEvent<HTMLDivElement>} event - `dblclick` on the board.
+   * @param {MouseEvent<HTMLElement>} event - `dblclick` on the board.
    * @returns {void}
    */
-  const handleDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
+  const handleDoubleClick = (event: MouseEvent<HTMLElement>) => {
     if (!pressedOnBackgroundRef.current) return
     const pointer = toBoardPoint(event)
     addNote({

@@ -27,3 +27,6 @@ export const NOTE_COLOR_OPTIONS: readonly { id: NoteColor; label: string }[] = [
 
 // Smaller drawn areas are treated as accidental clicks rather than a new note.
 export const MIN_DRAWN_SIZE = 40
+
+// Distance, in pixels, a note moves or grows per arrow key press.
+export const KEYBOARD_STEP = 16

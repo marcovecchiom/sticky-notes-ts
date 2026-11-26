@@ -30,5 +30,5 @@
   transform: scale(1.06);
   border: 2px solid var(--color-danger);
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }

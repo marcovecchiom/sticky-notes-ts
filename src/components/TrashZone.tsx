@@ -16,7 +16,9 @@ interface TrashZoneProps {
 }
 
 /**
- * Drop zone in the bottom-right corner that deletes the note released over it.
+ * Drop zone in the bottom-right corner that deletes the note released over it. It is a
+ * pointer-only affordance, so it is hidden from assistive technologies; keyboard users
+ * delete notes with the Delete key or the note's delete button.
  *
  * @param {TrashZoneProps} props - Ref and visual state.
  * @returns {JSX.Element} The trash zone element.
@@ -27,7 +29,7 @@ export function TrashZone({ ref, isVisible, isHovered }: TrashZoneProps) {
     .join(' ')
 
   return (
-    <div ref={ref} className={className} aria-hidden={!isVisible}>
+    <div ref={ref} className={className} aria-hidden="true">
       <TrashIcon />
       <span>{isHovered ? 'Release to delete' : 'Drop here to delete'}</span>
     </div>

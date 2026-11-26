@@ -15,8 +15,10 @@
 
   /* Text and icons */
   --color-text-primary: #0f161a;
-  --color-text-secondary: #707477;
+  /* Darkened from the brand #707477 to reach 4.5:1 on the toolbar background. */
+  --color-text-secondary: #62666a;
   --color-text-muted: #7b87a8;
+  --color-text-on-note-muted: rgba(15, 22, 26, 0.72);
 
   /* Actions and brand */
   --color-brand-primary: #284086;
@@ -27,6 +29,8 @@
   --color-success: #2ba86a;
   --color-danger: #f0503c;
   --color-danger-bg: rgba(240, 80, 60, 0.12);
+  /* Small danger text needs a darker shade than the brand red to reach 4.5:1. */
+  --color-danger-text: #b3301f;
 
   /* Sticky note palette */
   --note-yellow: #ffde55;
@@ -73,4 +77,32 @@ button,
 textarea,
 input {
   font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-focus);
+  outline-offset: 2px;
+}
+
+/* Hides content visually while keeping it available to screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

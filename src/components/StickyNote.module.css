@@ -42,8 +42,8 @@
   transition: opacity 150ms ease;
 }
 
-.note:hover .palette,
-.note:focus-within .palette {
+.note:hover :is(.palette, .deleteButton),
+.note:focus-within :is(.palette, .deleteButton) {
   opacity: 1;
 }
 
@@ -66,9 +66,30 @@
   box-shadow: 0 0 0 2px var(--color-bg-surface);
 }
 
-.swatch:focus-visible {
-  outline: 2px solid var(--color-accent-focus);
-  outline-offset: 2px;
+/* The blue focus ring is too faint on sky and teal notes; ink contrasts with every note color. */
+.note :focus-visible {
+  outline-color: var(--color-text-primary);
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-on-note-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.deleteButton:hover {
+  background: rgba(15, 22, 26, 0.08);
+  color: var(--color-text-primary);
 }
 
 .text {
@@ -88,7 +109,7 @@
 }
 
 .text::placeholder {
-  color: var(--color-text-secondary);
+  color: var(--color-text-on-note-muted);
 }
 
 .resizeHandle {
