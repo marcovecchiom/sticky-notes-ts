@@ -30,6 +30,18 @@ npm run lint     # run oxlint
 
 Supported browsers: latest Chrome, Firefox and Edge on desktop, minimum resolution 1024×768. Smaller windows (for example with DevTools docked or a high zoom level) keep working: a notice is shown and the page scrolls instead of clipping, and notes placed in a larger window are displayed inside the visible board without changing their saved position.
 
+## Testing
+
+End-to-end tests use [Playwright](https://playwright.dev) and run against the dev server in Chromium (the engine behind Chrome and Edge) and Firefox:
+
+```bash
+npx playwright install chromium firefox   # first run only: downloads the test browsers
+npm run test:e2e                          # starts the dev server if needed and runs the suite
+npx playwright test --ui                  # optional: interactive runner
+```
+
+The suite (`e2e/`) covers note creation (drawing, double-click, toolbar), moving, resizing, bringing to front, deleting through the trash zone, persistence across reloads, keyboard operation with screen reader announcements, the trash zone as a restricted area, and small-window behavior. Requests outside `localhost` are blocked, so the tests never depend on the network.
+
 ## Architecture
 
 The app is split into layers with one-way dependencies: domain types and constants at the bottom, a services layer for persistence, custom hooks for state and behavior, and presentational components on top. `useNotesManager` is the single source of truth: it holds the notes array, hydrates it synchronously from `localStorage` on start and exposes stable, immutable CRUD actions (`addNote`, `bringToFront`, `updateNotePosition`, …) built on functional state updates. Every change is persisted after a 500 ms debounce to both `localStorage` and an asynchronous mock REST client, so continuous gestures don't flood storage; stale sync responses are ignored, pending changes are flushed on `pagehide`, and data read back from storage is validated with runtime type guards instead of being trusted.
